@@ -110,8 +110,7 @@ RUN echo "Install native dependencies" \
     && dpkg --add-architecture i386 \
     && apt-get update \
     && apt-get -y install zlib1g:i386 \
-    && apt-get -y install zlib1g-dev:i386 \
-    && apt-get -y install libncurses5
+    && apt-get -y install zlib1g-dev:i386
 
 RUN apt-get -y update && apt-get -y upgrade
 
