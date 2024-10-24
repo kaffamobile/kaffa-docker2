@@ -1,116 +1,96 @@
-FROM openjdk:8
+FROM eclipse-temurin:21-jdk
 
-ARG MAVEN_VERSION=3.6.1
 ARG USER_HOME_DIR="/root"
-ARG SHA=b4880fb7a3d81edd190a029440cdf17f308621af68475a4fe976296e71ff4a4b546dd6d8a58aaafba334d309cc11e638c52808a4b0e818fc0fd544226d952544
-ARG BASE_URL=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries
-RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
-    && echo "Downloading maven" \
-    && curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
-    \
-    && echo "Checking download hash" \
-    && echo "${SHA}  /tmp/apache-maven.tar.gz" | sha512sum -c - \
-    \
-    && echo "Unziping maven" \
-    && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
-    \
-    && echo "Cleaning and setting links" \
-    && rm -f /tmp/apache-maven.tar.gz \
-    && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
-ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 COPY maven/settings.xml /root/.m2/settings.xml
 
-ARG GRADLE_VERSION=4.2.1
-ARG GRADLE_BASE_URL=https://services.gradle.org/distributions
-# obtained from here https://gradle.org/release-checksums/
-ARG GRADLE_SHA=b551cc04f2ca51c78dd14edb060621f0e5439bdfafa6fd167032a09ac708fbc0
-RUN mkdir -p /usr/share/gradle /usr/share/gradle/ref \
-    && echo "Downlaoding gradle hash" \
-    && curl -fsSL -o /tmp/gradle.zip ${GRADLE_BASE_URL}/gradle-${GRADLE_VERSION}-bin.zip \
-    \
-    && echo "Checking download hash" \
-    && echo "${GRADLE_SHA}  /tmp/gradle.zip" | sha256sum -c - \
-    \
-    && echo "Unziping gradle" \
-    && unzip -d /usr/share/gradle /tmp/gradle.zip \
-    \
-    && echo "Cleaning and setting links" \
-    && rm -f /tmp/gradle.zip \
-    && ln -s /usr/share/gradle/gradle-${GRADLE_VERSION} /usr/bin/gradle
-ENV GRADLE_VERSION 3.3
-ENV GRADLE_HOME /usr/bin/gradle
-ENV GRADLE_USER_HOME /cache
-ENV PATH $PATH:$GRADLE_HOME/bin
-VOLUME $GRADLE_USER_HOME
+RUN apt-get update && apt-get install -y unzip wget
 
 RUN echo "Install Android SDK"
-ARG ANDROID_SDK_VERSION=4333796
+ARG ANDROID_SDK_VERSION=9123335
 ENV ANDROID_HOME /opt/android-sdk
 ENV ANDROID_SDK /opt/android-sdk
-RUN mkdir -p ${ANDROID_HOME} && cd ${ANDROID_HOME} \
-    && wget -q https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_VERSION}.zip \
-    && unzip *tools*linux*.zip \
-    && rm *tools*linux*.zip
-RUN echo "Install Android SDK Versions" \
-        && mkdir -p /root/.android/ \
-        && touch /root/.android/repositories.cfg \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;19.1.0" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;20.0.0" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;21.1.2" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;22.0.1" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;23.0.1" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;23.0.2" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;23.0.3" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;24.0.0" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;24.0.1" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;24.0.2" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;24.0.3" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;25.0.0" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;25.0.1" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;25.0.2" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;25.0.3" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;26.0.0" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;26.0.1" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;26.0.2" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;26.0.3" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;27.0.0" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;27.0.1" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;27.0.2" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;27.0.3" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;28.0.0" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;28.0.1" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;28.0.2" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;28.0.3" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "build-tools;29.0.2" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platform-tools" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-19" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-20" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-21" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-22" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-23" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-24" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-25" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-26" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-27" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-28" \
-        && yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-29" \
-        && echo "Android SDK finishing"
+RUN mkdir -p ${ANDROID_HOME}
 
-ARG ANDROID_NDK_SHA=ba85dbe4d370e4de567222f73a3e034d85fc3011b3cbd90697f3e8dcace3ad94
-RUN echo "Downloading Android NDK R11c" \
-    && mkdir -p /usr/share/android-ndk \
-    && curl -fsSL -o /tmp/android-ndk.zip https://dl.google.com/android/repository/android-ndk-r11c-linux-x86_64.zip?hl=pt_br \
-    && echo "Checking download hash" \
-    && echo "${ANDROID_NDK_SHA}  /tmp/android-ndk.zip" | sha256sum -c - \
-    \
-    && echo "Unziping android-ndk" \
+RUN wget -O ${ANDROID_HOME}/commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_VERSION}_latest.zip \
+    && unzip ${ANDROID_HOME}/commandlinetools.zip -d ${ANDROID_HOME}/cmdline-tools \
+    && rm ${ANDROID_HOME}/commandlinetools.zip
+
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools/latest \
+    && mv ${ANDROID_HOME}/cmdline-tools/cmdline-tools/* ${ANDROID_HOME}/cmdline-tools/latest/
+
+RUN yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses \
+    && yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platform-tools" \
+    && yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager \
+        "build-tools;30.0.3" \
+        "build-tools;31.0.0" \
+        "build-tools;32.0.0" \
+        "build-tools;33.0.0" \
+        "build-tools;34.0.0" \
+    && yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager \
+        "platforms;android-30" \
+        "platforms;android-31" \
+        "platforms;android-32" \
+        "platforms;android-33" \
+        "platforms;android-34"
+
+RUN mkdir -p /usr/share/android-ndk \
+    && wget -O /tmp/android-ndk.zip https://dl.google.com/android/repository/android-ndk-r21-linux-x86_64.zip \
     && unzip -d /usr/share/android-ndk /tmp/android-ndk.zip \
-    \
-    && echo "Cleaning android-ndk" \
     && rm -f /tmp/android-ndk.zip
-ENV ANDROID_NDK_HOME /usr/share/android-ndk/android-ndk-r11c
+ENV ANDROID_NDK_HOME /usr/share/android-ndk/android-ndk-r21
 ENV PATH $PATH:$ANDROID_NDK_HOME
+
+RUN apt-get update && \
+    apt-get install -y \
+        build-essential \
+        libreadline-dev \
+        wget \
+        unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN wget -O lua-5.1.5.tar.gz https://www.lua.org/ftp/lua-5.1.5.tar.gz && \
+    tar zxf lua-5.1.5.tar.gz && \
+    cd lua-5.1.5 && \
+    make linux test && \
+    make install && \
+    cd .. && \
+    rm -rf lua-5.1.5 lua-5.1.5.tar.gz
+
+RUN apt-get -y update \
+    && apt-get -y install \
+        cmake \
+        git \
+        build-essential \
+        automake \
+        libsqlite3-dev \
+        g++-multilib \
+        gcc-multilib \
+        mingw-w64 \
+        libz-mingw-w64 \
+        libz-mingw-w64-dev \
+        libtool \
+        zlib1g \
+        zlib1g-dev \
+    && dpkg --add-architecture i386 \
+    && apt-get update \
+    && apt-get -y install \
+        zlib1g:i386 \
+        zlib1g-dev:i386 \
+        libncurses6 \
+    && apt-get -y install --install-recommends wine \
+    && wget -qO- https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY kcct.sh /bin/kcct
+COPY kcct-spatialite-cow /root/.kcct/
+RUN echo "Install KCCT - Kaffa Cross Compiler Tool" && chmod +x /bin/kcct
+    
+RUN echo "Copying Java Windows Includes"
+COPY java-win-includes /opt/java-win-includes/
+ENV JAVA_WIN_INCLUDES /opt/java-win-includes/
 
 RUN echo "Install native dependencies" \
     && apt-get -y update \
@@ -133,24 +113,7 @@ RUN echo "Install native dependencies" \
     && apt-get -y install zlib1g-dev:i386 \
     && apt-get -y install libncurses5
 
-RUN echo "Install Wine" \
-    && apt-get -y install --install-recommends wine-development
-
-COPY kcct.sh /bin/kcct
-COPY kcct-spatialite-cow /root/.kcct/
-RUN echo "Install KCCT - Kaffa Cross Compiler Tool" \
-    && chmod +x /bin/kcct
-
-RUN echo "Copying Java Windows Includes"
-COPY java-win-includes /opt/java-win-includes/
-ENV JAVA_WIN_INCLUDES /opt/java-win-includes/
-
-RUN echo "Install node 12 / npm / yarn" \
-    && curl -sL https://deb.nodesource.com/setup_12.x | bash - \
-    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
-    && apt-get update -qq && apt-get install -qq --no-install-recommends nodejs yarn \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get -y update && apt-get -y upgrade
 
 RUN apt-get -y autoremove \
     && apt-get -y autoclean \
